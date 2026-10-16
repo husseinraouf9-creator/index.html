@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ChemLab: Ultimate Reaction 🧪</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --accent: #38bdf8;
+      --text-light: #f8fafc;
+      --border-color: #334155;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-primary); color: var(--text-light); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    header { background: var(--bg-secondary); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); }
+    header h1 { font-size: 1.2rem; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+
+    .tabs { display: flex; background: #0f172a; border-bottom: 1px solid var(--border-color); }
+    .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; color: #94a3b8; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .tab-btn.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: #1e293b; }
+
+    .main-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px; position: relative; }
+
+    .status-panel { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 18px; width: 100%; max-width: 500px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .status-title { font-size: 1.1rem; font-weight: bold; color: var(--accent); margin-bottom: 4px; }
+    .status-desc { font-size: 0.9rem; color: #cbd5e1; }
+
+    /* وعاء التفاعل المصمم بـ CSS */
+    .lab-setup { position: relative; width: 160px; height: 210px; display: flex; justify-content: center; align-items: flex-end; margin: 20px 0; }
+    .beaker { width: 140px; height: 180px; border: 4px solid rgba(255,255,255,0.8); border-top: none; border-radius: 0 0 20px 20px; position: relative; overflow: hidden; background: rgba(255,255,255,0.03); backdrop-filter: blur(4px); box-shadow: inset 0 0 20px rgba(255,255,255,0.1); }
+    .liquid { position: absolute; bottom: 0; width: 100%; height: 0%; transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 0 0 16px 16px; }
+
+    /* تأثيرات بصرية */
+    .bubble { position: absolute; background: rgba(255,255,255,0.7); border-radius: 50%; animation: rise 1.2s infinite linear; }
+    @keyframes rise {
+      0% { bottom: 0; opacity: 1; transform: scale(0.4); }
+      100% { bottom: 100%; opacity: 0; transform: scale(1.2); }
+    }
+
+    /* رف المواد الكيميائية */
+    .shelf { background: var(--bg-secondary); border-top: 2px solid var(--border-color); padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; max-height: 220px; overflow-y: auto; width: 100%; }
+    .chem-card { background: #334155; border: 1px solid #475569; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.15s; }
+    .chem-card:active { transform: scale(0.93); }
+    .dot { width: 14px; height: 14px; border-radius: 50%; margin-bottom: 6px; box-shadow: 0 0 6px rgba(0,0,0,0.4); }
+    .chem-name { font-size: 0.8rem; font-weight: 600; text-align: center; }
+
+    .controls { display: flex; gap: 10px; margin-bottom: 10px; }
+    .btn { padding: 10px 18px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-action { background: #10b981; color: white; }
+
+    /* نمط التحديات */
+    .quest-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 10px; width: 100%; max-width: 500px; }
+    .quest-title { font-weight: bold; color: var(--accent); margin-bottom: 5px; }
+    .quest-desc { font-size: 0.88rem; color: #cbd5e1; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🧪 ChemLab: Ultimate Reaction</h1>
+    <div id="scoreDisplay">✨ النقاط: 0</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchMode('sandbox')">النمط الحر (Sandbox)</button>
+    <button class="tab-btn" onclick="switchMode('quests')">التحديات (Quests)</button>
+  </div>
+
+  <div class="main-stage">
+    <div class="status-panel">
+      <div class="status-title" id="statusTitle">المعمل جاهز</div>
+      <div class="status-desc" id="statusDesc">اختر مركبين أو أكثر للخلط وإجراء التفاعلات.</div>
+    </div>
+
+    <div class="lab-setup">
+      <div class="beaker">
+        <div class="liquid" id="liquid"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-danger" onclick="resetBeaker()">تفريغ الوعاء 🧹</button>
+    </div>
+
+    <div class="shelf" id="shelf"></div>
+  </div>
+
+  <script>
+    const chemicals = {
+      hcl: { name: "HCl (حمض)", color: "rgba(239, 68, 68, 0.75)" },
+      naoh: { name: "NaOH (قاعدة)", color: "rgba(59, 130, 246, 0.75)" },
+      phph: { name: "Ph.Ph (كاشف)", color: "rgba(255, 255, 255, 0.3)" },
+      iodine: { name: "محلول اليود", color: "rgba(180, 83, 9, 0.85)" },
+      starch: { name: "محلول النشا", color: "rgba(241, 245, 249, 0.5)" },
+      feci3: { name: "FeCl₃ (حديد III)", color: "rgba(217, 119, 6, 0.85)" },
+      kscn: { name: "KSCN (ثيوسيانات)", color: "rgba(255, 255, 255, 0.3)" }
+    };
+
+    const reactions = [
+      { reactants: ["hcl", "naoh"], color: "rgba(16, 185, 129, 0.7)", title: "تفاعل تعادل", desc: "حمض + قاعدة ➔ ملح وماء (NaCl + H₂O).", bubbles: true },
+      { reactants: ["naoh", "phph"], color: "rgba(236, 72, 153, 0.85)", title: "وسط قلوي", desc: "تغير لون الفينولفثالين إلى الوردي الأرجواني.", bubbles: false },
+      { reactants: ["iodine", "starch"], color: "rgba(30, 27, 75, 0.95)", title: "كشف النشا", desc: "تفاعل اليود مع النشا وأعطى لوناً أزرق داكناً.", bubbles: false },
+      { reactants: ["feci3", "kscn"], color: "rgba(153, 27, 27, 0.95)", title: "كشف الحديد III", desc: "تكون لون أحمر دموي (ثيوسيانات الحديد III).", bubbles: false }
+    ];
+
+    let currentMix = [];
+    let score = 0;
+
+    function renderShelf() {
+      const shelf = document.getElementById('shelf');
+      shelf.innerHTML = '';
+      for (let key in chemicals) {
+        const item = chemicals[key];
+        const card = document.createElement('div');
+        card.className = 'chem-card';
+        card.onclick = () => addChemical(key);
+        card.innerHTML = `<div class="dot" style="background:${item.color}"></div><div class="chem-name">${item.name}</div>`;
+        shelf.appendChild(card);
+      }
+    }
+
+    function addChemical(key) {
+      if (currentMix.includes(key)) return;
+      currentMix.push(key);
+
+      const liquid = document.getElementById('liquid');
+      liquid.style.height = Math.min(currentMix.length * 30, 85) + '%';
+
+      if (currentMix.length === 1) {
+        liquid.style.background = chemicals[key].color;
+        updateStatus(`تم أضافة ${chemicals[key].name}`, "أضف كاشفاً أو مادة أخرى للخلط.");
+      } else {
+        checkReaction();
+      }
+    }
+
+    function checkReaction() {
+      const liquid = document.getElementById('liquid');
+      let match = reactions.find(r => r.reactants.every(c => currentMix.includes(c)));
+
+      if (match) {
+        liquid.style.background = match.color;
+        updateStatus(`✨ ${match.title}`, match.desc);
+        if (match.bubbles) createBubbles();
+        score += 10;
+        document.getElementById('scoreDisplay').innerText = `✨ النقاط: ${score}`;
+      } else {
+        liquid.style.background = "rgba(100, 116, 139, 0.7)";
+        updateStatus("مزيج عادي", "لم يحدث تفاعل كيميائي خاص.");
+      }
+    }
+
+    function createBubbles() {
+      const beaker = document.querySelector('.beaker');
+      for (let i = 0; i < 10; i++) {
+        setTimeout(() => {
+          const b = document.createElement('div');
+          b.className = 'bubble';
+          b.style.width = b.style.height = (Math.random() * 8 + 4) + 'px';
+          b.style.left = Math.random() * 80 + 10 + '%';
+          beaker.appendChild(b);
+          setTimeout(() => b.remove(), 1200);
+        }, i * 100);
+      }
+    }
+
+    function updateStatus(title, desc) {
+      document.getElementById('statusTitle').innerText = title;
+      document.getElementById('statusDesc').innerText = desc;
+    }
+
+    function resetBeaker() {
+      currentMix = [];
+      const liquid = document.getElementById('liquid');
+      liquid.style.height = '0%';
+      updateStatus("المعمل جاهز", "اختر مركبين أو أكثر للخلط وإجراء التفاعلات.");
+    }
+
+    renderShelf();
+  </script>
+</body>
+</html>
